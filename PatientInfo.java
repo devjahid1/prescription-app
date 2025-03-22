@@ -9,7 +9,7 @@ public class PatientInfo {
 
     public PatientInfo() {
         frame = new JFrame("Patient Information");
-        frame.setSize(600, 500); // Reduced window size
+        frame.setSize(600, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
 
