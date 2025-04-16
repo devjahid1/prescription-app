@@ -9,7 +9,7 @@ public class PrescriptionApp {
     private JComboBox<String> genderComboBox;
     private JTable complaintTable, prescriptionTable, testTable, followUpTable;
     private DefaultTableModel complaintTableModel, prescriptionTableModel, testTableModel, followUpTableModel;
-    private JButton addComplaintButton, addMedicineButton, addTestButton, addFollowUpButton;
+    private JButton addComplaintButton, addMedicineButton, addTestButton, addFollowUpButton, printPreviewButton;
 
     public PrescriptionApp() {
         frame = new JFrame("Prescription Software");
@@ -17,13 +17,8 @@ public class PrescriptionApp {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(20, 20));
 
-        JPanel patientPanel = new JPanel(new GridLayout(2, 3, 10, 10));
+        JPanel patientPanel = new JPanel(new GridLayout(3, 2, 10, 10));
         stylePanel(patientPanel);
-
-        patientPanel.add(createBlackLabel("Patient ID:"));
-        patientIdField = createStyledTextField(generateRandomId());
-        patientIdField.setEditable(false);
-        patientPanel.add(patientIdField);
 
         patientPanel.add(createBlackLabel("Patient Name:"));
         patientNameField = createStyledTextField("");
@@ -33,30 +28,32 @@ public class PrescriptionApp {
         patientAgeField = createStyledTextField("");
         patientPanel.add(patientAgeField);
 
-        patientPanel.add(createBlackLabel("Contact:"));
-        patientContactField = createStyledTextField("");
-        patientPanel.add(patientContactField);
+        patientPanel.add(createBlackLabel("Patient ID:"));
+        patientIdField = createStyledTextField(generateRandomId());
+        patientIdField.setEditable(false);
+        patientPanel.add(patientIdField);
 
         patientPanel.add(createBlackLabel("Gender:"));
         genderComboBox = new JComboBox<>(new String[]{"Male", "Female", "Other"});
         patientPanel.add(genderComboBox);
 
+        patientPanel.add(createBlackLabel("Contact:"));
+        patientContactField = createStyledTextField("");
+        patientPanel.add(patientContactField);
+
         patientPanel.add(createBlackLabel("Address:"));
         patientAddressField = createStyledTextField("");
         patientPanel.add(patientAddressField);
-
 
         complaintTableModel = new DefaultTableModel(new String[]{"Chief Complaint", "Action"}, 0);
         complaintTable = new JTable(complaintTableModel);
         setupDeleteButton(complaintTable, complaintTableModel);
         JPanel complaintPanel = createSectionPanel("Chief Complaints", complaintTable);
 
-
         prescriptionTableModel = new DefaultTableModel(new String[]{"Medicine", "Dosage", "Strength", "Action"}, 0);
         prescriptionTable = new JTable(prescriptionTableModel);
         setupDeleteButton(prescriptionTable, prescriptionTableModel);
         JPanel medicinePanel = createSectionPanel("Prescriptions", prescriptionTable);
-
 
         testTableModel = new DefaultTableModel(new String[]{"Test Name", "Action"}, 0);
         testTable = new JTable(testTableModel);
@@ -68,12 +65,20 @@ public class PrescriptionApp {
         setupDeleteButton(followUpTable, followUpTableModel);
         JPanel followUpPanel = createSectionPanel("Follow-up Instructions", followUpTable);
 
-        JPanel mainPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+        JPanel topRowPanel = new JPanel(new GridLayout(1, 2, 20, 20));
+        stylePanel(topRowPanel);
+        topRowPanel.add(complaintPanel);
+        topRowPanel.add(medicinePanel);
+
+        JPanel bottomRowPanel = new JPanel(new GridLayout(1, 2, 20, 20));
+        stylePanel(bottomRowPanel);
+        bottomRowPanel.add(testPanel);
+        bottomRowPanel.add(followUpPanel);
+
+        JPanel mainPanel = new JPanel(new GridLayout(2, 1, 20, 20));
         stylePanel(mainPanel);
-        mainPanel.add(complaintPanel);
-        mainPanel.add(medicinePanel);
-        mainPanel.add(testPanel);
-        mainPanel.add(followUpPanel);
+        mainPanel.add(topRowPanel);
+        mainPanel.add(bottomRowPanel);
 
         JPanel buttonPanel = new JPanel();
         stylePanel(buttonPanel);
@@ -81,11 +86,13 @@ public class PrescriptionApp {
         addMedicineButton = createButton("Add Medicine");
         addTestButton = createButton("Add Test");
         addFollowUpButton = createButton("Add Follow-up");
+        printPreviewButton = createButton("Print Preview");
 
         buttonPanel.add(addComplaintButton);
         buttonPanel.add(addMedicineButton);
         buttonPanel.add(addTestButton);
         buttonPanel.add(addFollowUpButton);
+        buttonPanel.add(printPreviewButton);
 
         frame.add(patientPanel, BorderLayout.NORTH);
         frame.add(mainPanel, BorderLayout.CENTER);
@@ -95,8 +102,47 @@ public class PrescriptionApp {
         addMedicineButton.addActionListener(e -> addPrescription());
         addTestButton.addActionListener(e -> addTest());
         addFollowUpButton.addActionListener(e -> addFollowUp());
+        printPreviewButton.addActionListener(e -> showPrintPreview());
 
         frame.setVisible(true);
+    }
+
+    private void showPrintPreview() {
+        JTextArea printArea = new JTextArea();
+        printArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        printArea.append("=================== PRESCRIPTION PREVIEW ===================\n\n");
+        printArea.append("Name: " + patientNameField.getText() + "\t");
+        printArea.append("Age: " + patientAgeField.getText() + "\t");
+        printArea.append("Patient ID: " + patientIdField.getText() + "\t");
+        printArea.append("Gender: " + genderComboBox.getSelectedItem() + "\n");
+        printArea.append("Contact: " + patientContactField.getText() + "\t");
+        printArea.append("Address: " + patientAddressField.getText() + "\n\n");
+
+        printArea.append(String.format("%-30s %-40s\n", "Chief Complaints", "Prescriptions"));
+        printArea.append(String.format("%-30s %-40s\n", "------------------", "-------------"));
+        int maxRows = Math.max(complaintTableModel.getRowCount(), prescriptionTableModel.getRowCount());
+        for (int i = 0; i < maxRows; i++) {
+            String complaint = i < complaintTableModel.getRowCount() ? (String) complaintTableModel.getValueAt(i, 0) : "";
+            String prescription = "";
+            if (i < prescriptionTableModel.getRowCount()) {
+                prescription = prescriptionTableModel.getValueAt(i, 0) + " | Dosage: " + prescriptionTableModel.getValueAt(i, 1) + " | Strength: " + prescriptionTableModel.getValueAt(i, 2);
+            }
+            printArea.append(String.format("%-30s %-40s\n", complaint, prescription));
+        }
+
+        printArea.append("\n");
+        printArea.append(String.format("%-30s %-30s\n", "Tests", "Follow-up Instructions"));
+        printArea.append(String.format("%-30s %-30s\n", "-----", "----------------------"));
+        maxRows = Math.max(testTableModel.getRowCount(), followUpTableModel.getRowCount());
+        for (int i = 0; i < maxRows; i++) {
+            String test = i < testTableModel.getRowCount() ? (String) testTableModel.getValueAt(i, 0) : "";
+            String followUp = i < followUpTableModel.getRowCount() ? (String) followUpTableModel.getValueAt(i, 0) : "";
+            printArea.append(String.format("%-30s %-30s\n", test, followUp));
+        }
+
+        JScrollPane scrollPane = new JScrollPane(printArea);
+        scrollPane.setPreferredSize(new Dimension(600, 400));
+        JOptionPane.showMessageDialog(frame, scrollPane, "Print Preview", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private String generateRandomId() {
